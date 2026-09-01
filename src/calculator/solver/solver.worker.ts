@@ -1,4 +1,4 @@
-import { loadPyodide, type PyodideAPI } from 'pyodide'
+import type { PyodideAPI } from 'pyodide'
 import solverSource from './solver.py?raw'
 import type { SolverRequest, SolverWorkerMessage } from './protocol'
 
@@ -13,7 +13,12 @@ const PYODIDE_INDEX_URL =
 
 async function initialize(): Promise<PyodideAPI> {
   try {
-    const pyodide = await loadPyodide({ indexURL: PYODIDE_INDEX_URL })
+    const pyodideModule = (await import(
+      /* @vite-ignore */ `${PYODIDE_INDEX_URL}pyodide.mjs`
+    )) as typeof import('pyodide')
+    const pyodide = await pyodideModule.loadPyodide({
+      indexURL: PYODIDE_INDEX_URL,
+    })
     await pyodide.loadPackage('sympy')
     pyodide.FS.writeFile('/calculator_solver.py', solverSource)
     await pyodide.runPythonAsync('from calculator_solver import solve_payload')

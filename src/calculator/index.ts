@@ -1,0 +1,7 @@
+export { ScientificCalculator } from './ScientificCalculator'
+export type { Relation } from './model'
+export type { ExpressionAst, RelationAst } from './dsl/ast'
+export { parseRelation } from './dsl/parser'
+export { createSolverClient } from './solver/client'
+export type { SolverClient } from './solver/client'
+export type { SolverResult } from './solver/protocol'
