@@ -15,6 +15,14 @@ class RealDomainError(Exception):
     """Raised when a valid operation produces a non-real value in real mode."""
 
 
+class UndefinedDomainError(Exception):
+    """Raised when an operation produces an undefined closed value."""
+
+
+class UnresolvedValueError(Exception):
+    """Raised when SymPy cannot establish whether a closed value is real."""
+
+
 SYMBOLIC_QUERY_OPERATIONS = {
     "simplify",
     "expand",
@@ -264,9 +272,17 @@ def _evaluate_queries(query_rows, symbols, assignments):
         value = build_expr(relation["expression"], symbols).subs(assignments, simultaneous=True)
         if not _query_allows_symbolic_result(relation):
             value = sp.simplify(value)
+        if value.has(sp.nan, sp.zoo):
+            raise UndefinedDomainError(
+                "This query is undefined in V1 real mode."
+            )
         if value.is_real is False:
             raise RealDomainError(
                 "This query produces a complex value, which is outside V1 real mode."
+            )
+        if not value.free_symbols and value.is_real is None:
+            raise UnresolvedValueError(
+                "SymPy could not establish a valid real value for this query."
             )
         if value.free_symbols and not _query_allows_symbolic_result(relation):
             unresolved_symbols.update(value.free_symbols)
@@ -373,6 +389,17 @@ def solve_payload(payload):
             "status": "solved",
             "variables": variable_names,
             "solutions": serialized_solutions,
+        }
+    except UndefinedDomainError as error:
+        return {
+            "status": "unsupported",
+            "message": str(error),
+            "feature": "undefined-domain",
+        }
+    except UnresolvedValueError as error:
+        return {
+            "status": "unresolved",
+            "message": str(error),
         }
     except RealDomainError as error:
         return {

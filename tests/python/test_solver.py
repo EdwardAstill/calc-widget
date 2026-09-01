@@ -184,3 +184,12 @@ def test_constrained_queries_cannot_return_complex_values():
 
     assert result["status"] == "unsupported"
     assert result["feature"] == "complex-domain"
+
+
+def test_closed_undefined_query_values_are_not_reported_as_solved():
+    result = solve_payload(
+        payload(query(binary("/", number(0), number(0))))
+    )
+
+    assert result["status"] == "unsupported"
+    assert result["feature"] == "undefined-domain"

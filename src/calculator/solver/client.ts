@@ -120,7 +120,6 @@ export function createSolverClient(
         worker?.terminate()
         worker = null
       }
-      if (!worker) startWorker()
       const request: SolverRequest = {
         type: 'solve',
         id: `solve-${Date.now()}-${++sequence}`,
@@ -129,10 +128,12 @@ export function createSolverClient(
       const promise = new Promise<SolverResult>((resolve) => {
         active = { request, resolve, posted: false }
       })
+      if (!worker) startWorker()
+      if (!active || active.request.id !== request.id) return promise
       if (worker && snapshot.phase === 'ready') {
-        if (active) active.posted = true
+        active.posted = true
         worker.postMessage(request)
-      } else {
+      } else if (snapshot.phase !== 'failed') {
         queued = request
       }
       return promise

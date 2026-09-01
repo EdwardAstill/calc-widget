@@ -151,4 +151,21 @@ describe('createSolverClient', () => {
     })
     expect(client.getSnapshot()).toEqual({ phase: 'idle' })
   })
+
+  it('settles the request when the worker cannot be constructed', async () => {
+    const client = createSolverClient(() => {
+      throw new Error('Worker construction failed.')
+    })
+
+    const pending = client.solve([parseRelation('x=1')])
+
+    await expect(pending).resolves.toEqual({
+      status: 'error',
+      message: 'Worker construction failed.',
+    })
+    expect(client.getSnapshot()).toEqual({
+      phase: 'failed',
+      message: 'Worker construction failed.',
+    })
+  })
 })
