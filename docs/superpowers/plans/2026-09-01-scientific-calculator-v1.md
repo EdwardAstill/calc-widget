@@ -52,7 +52,7 @@ tests/python/test_solver.py         CPython solver contract suite
 - [ ] **Step 1: Scaffold and install pinned dependencies**
 
 ```bash
-npm create vite@8.2.2 . -- --template react-ts
+npm create vite@9.2.0 . -- --template react-ts
 npm install react@19.2.8 react-dom@19.2.8 katex@0.18.5 lucide-react@1.39.0 pyodide@314.0.6
 npm install -D typescript@7.0.2 vite@8.2.2 @vitejs/plugin-react@6.1.1 vitest@4.1.11 jsdom@30.0.1 @testing-library/react@16.3.3 @testing-library/jest-dom @testing-library/user-event eslint@10.9.1
 ```
