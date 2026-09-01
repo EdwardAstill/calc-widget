@@ -18,8 +18,10 @@ type ResultPanelProps = {
 function Value({ value }: { value: DisplayValue }) {
   return (
     <span className="result-value">
-      <MathMarkup latex={value.latex} />
-      <code>{value.exact}</code>
+      <span aria-hidden="true">
+        <MathMarkup latex={value.latex} />
+      </span>
+      <code className="sr-only">{value.exact}</code>
       {value.approximate && <small>≈ {value.approximate}</small>}
     </span>
   )
