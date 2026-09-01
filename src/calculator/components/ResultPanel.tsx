@@ -114,6 +114,16 @@ export function ResultPanel({ solver, engine, onRetry }: ResultPanelProps) {
         </div>
       </div>
     )
+  } else if (solver.phase === 'diagnostic') {
+    content = (
+      <div className="result-diagnostic result-warning" role="alert">
+        <Info aria-hidden="true" />
+        <div>
+          <h3>Add a relation first</h3>
+          <p>{solver.message}</p>
+        </div>
+      </div>
+    )
   } else if (solver.phase === 'complete') {
     content =
       solver.result.status === 'solved' ? (

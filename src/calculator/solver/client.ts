@@ -28,6 +28,12 @@ export interface SolverClient {
 
 type WorkerFactory = () => WorkerLike
 
+type ActiveRequest = {
+  request: SolverRequest
+  resolve(result: SolverResult): void
+  posted: boolean
+}
+
 const defaultWorkerFactory: WorkerFactory = () =>
   new Worker(new URL('./solver.worker.ts', import.meta.url), {
     type: 'module',
@@ -40,20 +46,18 @@ export function createSolverClient(
   let snapshot: SolverEngineSnapshot = { phase: 'idle' }
   let sequence = 0
   const listeners = new Set<() => void>()
-  const queued: SolverRequest[] = []
-  const pending = new Map<string, (result: SolverResult) => void>()
+  let queued: SolverRequest | null = null
+  let active: ActiveRequest | null = null
 
   function publish(next: SolverEngineSnapshot): void {
     snapshot = next
     for (const listener of listeners) listener()
   }
 
-  function settleAll(message: string): void {
-    for (const resolve of pending.values()) {
-      resolve({ status: 'error', message })
-    }
-    pending.clear()
-    queued.length = 0
+  function settleActive(message: string): void {
+    active?.resolve({ status: 'error', message })
+    active = null
+    queued = null
   }
 
   function handleMessage(
@@ -63,17 +67,21 @@ export function createSolverClient(
     if (source !== worker) return
     if (message.type === 'ready') {
       publish({ phase: 'ready' })
-      for (const request of queued.splice(0)) source.postMessage(request)
+      if (queued && active?.request.id === queued.id) {
+        active.posted = true
+        source.postMessage(queued)
+        queued = null
+      }
       return
     }
     if (message.type === 'init-error') {
       publish({ phase: 'failed', message: message.message })
-      settleAll(message.message)
+      settleActive(message.message)
       return
     }
-    const resolve = pending.get(message.id)
-    if (!resolve) return
-    pending.delete(message.id)
+    if (!active || active.request.id !== message.id) return
+    const { resolve } = active
+    active = null
     resolve(message.result)
   }
 
@@ -87,30 +95,46 @@ export function createSolverClient(
         if (nextWorker !== worker) return
         const message = event.message || 'The solver worker stopped unexpectedly.'
         publish({ phase: 'failed', message })
-        settleAll(message)
+        settleActive(message)
       }
     } catch (error) {
       worker = null
       const message =
         error instanceof Error ? error.message : 'The solver worker could not start.'
       publish({ phase: 'failed', message })
-      settleAll(message)
+      settleActive(message)
     }
   }
 
   return {
     solve(relations) {
-      if (!worker || snapshot.phase === 'failed') startWorker()
+      if (active) {
+        const restartWorker = active.posted
+        settleActive('This calculation was superseded by a newer request.')
+        if (restartWorker) {
+          worker?.terminate()
+          worker = null
+        }
+      }
+      if (snapshot.phase === 'failed') {
+        worker?.terminate()
+        worker = null
+      }
+      if (!worker) startWorker()
       const request: SolverRequest = {
         type: 'solve',
         id: `solve-${Date.now()}-${++sequence}`,
         relations,
       }
       const promise = new Promise<SolverResult>((resolve) => {
-        pending.set(request.id, resolve)
+        active = { request, resolve, posted: false }
       })
-      if (worker && snapshot.phase === 'ready') worker.postMessage(request)
-      else queued.push(request)
+      if (worker && snapshot.phase === 'ready') {
+        if (active) active.posted = true
+        worker.postMessage(request)
+      } else {
+        queued = request
+      }
       return promise
     },
     getSnapshot() {
@@ -123,13 +147,13 @@ export function createSolverClient(
     retry() {
       worker?.terminate()
       worker = null
-      settleAll('The solver restarted before the calculation finished.')
+      settleActive('The solver restarted before the calculation finished.')
       startWorker()
     },
     dispose() {
       worker?.terminate()
       worker = null
-      settleAll('The solver was closed before the calculation finished.')
+      settleActive('The solver was closed before the calculation finished.')
       publish({ phase: 'idle' })
       listeners.clear()
     },

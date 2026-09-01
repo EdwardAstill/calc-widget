@@ -10,6 +10,7 @@ export type Relation = {
 
 export type SolverState =
   | { phase: 'idle' }
+  | { phase: 'diagnostic'; code: 'no-relations'; message: string }
   | { phase: 'loading'; requestId: string }
   | { phase: 'complete'; requestId: string; result: SolverResult }
 
@@ -43,6 +44,11 @@ export type CalculatorAction =
   | { type: 'clear-editor' }
   | { type: 'clear-all' }
   | { type: 'help-changed'; open: boolean }
+  | {
+      type: 'local-diagnostic'
+      code: 'no-relations'
+      message: string
+    }
   | { type: 'solve-started'; requestId: string }
   | {
       type: 'solve-finished'

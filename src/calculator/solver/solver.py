@@ -11,6 +11,10 @@ class UnsupportedFeature(Exception):
     """Raised when a valid payload asks for a capability outside V1."""
 
 
+class RealDomainError(Exception):
+    """Raised when a valid operation produces a non-real value in real mode."""
+
+
 SYMBOLIC_QUERY_OPERATIONS = {
     "simplify",
     "expand",
@@ -160,6 +164,31 @@ def _underdetermined(symbols):
     }
 
 
+def _set_has_continuum(value):
+    if value in {sp.S.Reals, sp.S.Complexes, sp.S.UniversalSet}:
+        return True
+    if isinstance(value, sp.Interval):
+        return True
+    if isinstance(value, sp.Union):
+        return any(_set_has_continuum(argument) for argument in value.args)
+    return False
+
+
+def _classify_nested_sets(values, variables):
+    nested_sets = [value for value in values if isinstance(value, sp.Set)]
+    if not nested_sets:
+        return None
+    if any(value == sp.EmptySet for value in nested_sets):
+        return {"status": "no-solution", "message": "No real solution exists."}
+    if any(_set_has_continuum(value) for value in nested_sets):
+        return _underdetermined(variables)
+    return {
+        "status": "unresolved",
+        "message": "SymPy returned a non-finite solution representation.",
+        "detail": str(tuple(nested_sets)),
+    }
+
+
 def classify_solution_set(solution_set, variables):
     """Classify a SymPy set without conflating unknown and empty results."""
     if solution_set is sp.EmptySet or solution_set == sp.EmptySet:
@@ -182,6 +211,11 @@ def classify_solution_set(solution_set, variables):
         values = tuple(item) if isinstance(item, (tuple, sp.Tuple)) else (item,)
         if len(values) != len(variables):
             return _underdetermined(variables)
+        nested_classification = _classify_nested_sets(values, variables)
+        if nested_classification:
+            if nested_classification["status"] == "no-solution":
+                continue
+            return nested_classification
         if any(value.free_symbols for value in values):
             return _underdetermined(variables)
         if any(value.is_real is False for value in values):
@@ -230,6 +264,10 @@ def _evaluate_queries(query_rows, symbols, assignments):
         value = build_expr(relation["expression"], symbols).subs(assignments, simultaneous=True)
         if not _query_allows_symbolic_result(relation):
             value = sp.simplify(value)
+        if value.is_real is False:
+            raise RealDomainError(
+                "This query produces a complex value, which is outside V1 real mode."
+            )
         if value.free_symbols and not _query_allows_symbolic_result(relation):
             unresolved_symbols.update(value.free_symbols)
         values.append(value)
@@ -335,6 +373,12 @@ def solve_payload(payload):
             "status": "solved",
             "variables": variable_names,
             "solutions": serialized_solutions,
+        }
+    except RealDomainError as error:
+        return {
+            "status": "unsupported",
+            "message": str(error),
+            "feature": "complex-domain",
         }
     except UnsupportedFeature as error:
         return {

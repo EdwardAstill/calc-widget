@@ -85,6 +85,58 @@ describe('createSolverClient', () => {
     expect(client.getSnapshot()).toEqual({ phase: 'ready' })
   })
 
+  it('keeps only the newest request queued while the worker loads', async () => {
+    const worker = new FakeWorker()
+    const client = createSolverClient(() => worker)
+    const first = client.solve([parseRelation('x=1')])
+    const second = client.solve([parseRelation('x=2')])
+
+    await expect(first).resolves.toEqual({
+      status: 'error',
+      message: 'This calculation was superseded by a newer request.',
+    })
+    expect(worker.terminate).not.toHaveBeenCalled()
+
+    worker.emit({ type: 'ready' })
+    expect(worker.posted).toHaveLength(1)
+    expect(worker.posted[0].relations).toEqual([parseRelation('x=2')])
+    worker.emit({ type: 'result', id: worker.posted[0].id, result: solved })
+    await expect(second).resolves.toEqual(solved)
+  })
+
+  it('restarts the worker when a new request supersedes active work', async () => {
+    const firstWorker = new FakeWorker()
+    const secondWorker = new FakeWorker()
+    const workers = [firstWorker, secondWorker]
+    const client = createSolverClient(() => {
+      const worker = workers.shift()
+      if (!worker) throw new Error('No worker available')
+      return worker
+    })
+
+    const first = client.solve([parseRelation('x=1')])
+    firstWorker.emit({ type: 'ready' })
+    expect(firstWorker.posted).toHaveLength(1)
+
+    const second = client.solve([parseRelation('x=2')])
+    await expect(first).resolves.toEqual({
+      status: 'error',
+      message: 'This calculation was superseded by a newer request.',
+    })
+    expect(firstWorker.terminate).toHaveBeenCalledOnce()
+    expect(client.getSnapshot()).toEqual({ phase: 'loading' })
+
+    secondWorker.emit({ type: 'ready' })
+    expect(secondWorker.posted).toHaveLength(1)
+    expect(secondWorker.posted[0].relations).toEqual([parseRelation('x=2')])
+    secondWorker.emit({
+      type: 'result',
+      id: secondWorker.posted[0].id,
+      result: solved,
+    })
+    await expect(second).resolves.toEqual(solved)
+  })
+
   it('terminates the worker and settles pending work on disposal', async () => {
     const worker = new FakeWorker()
     const client = createSolverClient(() => worker)

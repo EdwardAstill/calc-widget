@@ -107,37 +107,39 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
   }
 
   async function calculate(): Promise<void> {
+    if (state.relations.length === 0) {
+      dispatch({
+        type: 'local-diagnostic',
+        code: 'no-relations',
+        message: 'Build an expression and add it to the shared system first.',
+      })
+      return
+    }
+
     requestSequence.current += 1
     const requestId = `calculation-${Date.now()}-${requestSequence.current}`
     dispatch({ type: 'solve-started', requestId })
 
     let result: SolverResult
-    if (state.relations.length === 0) {
+    const asts = state.relations.map((relation) => relation.ast)
+    const validation = preflight(asts)
+    if (!validation.ok) {
       result = {
-        status: 'error',
-        message: 'Add at least one relation before calculating.',
+        status: validation.status,
+        equationCount: validation.equationCount,
+        variableCount: validation.variableCount,
+        message: validation.message,
       }
     } else {
-      const asts = state.relations.map((relation) => relation.ast)
-      const validation = preflight(asts)
-      if (!validation.ok) {
+      try {
+        result = await client.solve(asts)
+      } catch (error) {
         result = {
-          status: validation.status,
-          equationCount: validation.equationCount,
-          variableCount: validation.variableCount,
-          message: validation.message,
-        }
-      } else {
-        try {
-          result = await client.solve(asts)
-        } catch (error) {
-          result = {
-            status: 'error',
-            message:
-              error instanceof Error
-                ? error.message
-                : 'The solver stopped unexpectedly.',
-          }
+          status: 'error',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'The solver stopped unexpectedly.',
         }
       }
     }

@@ -150,3 +150,37 @@ def test_unresolved_and_unsupported_are_not_reported_as_no_solution():
 
     assert unresolved["status"] == "unresolved"
     assert unsupported["status"] == "unsupported"
+
+
+def test_classifies_nested_sets_returned_by_nonlinsolve():
+    periodic = solve_payload(payload(equation(call("sin", symbol("x")), number(0))))
+    impossible = solve_payload(
+        payload(equation(call("sqrt", symbol("x")), unary("-", number(1))))
+    )
+    identity = solve_payload(payload(equation(symbol("x"), symbol("x"))))
+
+    assert periodic["status"] == "unresolved"
+    assert impossible["status"] == "no-solution"
+    assert identity["status"] == "underdetermined"
+    assert identity["symbols"] == ["x"]
+
+
+def test_query_only_complex_results_are_outside_the_real_domain():
+    result = solve_payload(
+        payload(query(call("sqrt", unary("-", number(1)))))
+    )
+
+    assert result["status"] == "unsupported"
+    assert result["feature"] == "complex-domain"
+
+
+def test_constrained_queries_cannot_return_complex_values():
+    result = solve_payload(
+        payload(
+            equation(symbol("x"), unary("-", number(1))),
+            query(call("sqrt", symbol("x"))),
+        )
+    )
+
+    assert result["status"] == "unsupported"
+    assert result["feature"] == "complex-domain"

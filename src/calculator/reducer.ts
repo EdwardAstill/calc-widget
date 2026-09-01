@@ -65,6 +65,15 @@ export function calculatorReducer(
       return { ...initialCalculatorState, helpOpen: state.helpOpen }
     case 'help-changed':
       return { ...state, helpOpen: action.open }
+    case 'local-diagnostic':
+      return {
+        ...state,
+        solver: {
+          phase: 'diagnostic',
+          code: action.code,
+          message: action.message,
+        },
+      }
     case 'solve-started':
       return { ...state, solver: { phase: 'loading', requestId: action.requestId } }
     case 'solve-finished':

@@ -127,6 +127,21 @@ describe('ScientificCalculator', () => {
     ).toBeVisible()
   })
 
+  it('shows a local prompt instead of a solver error when no rows are saved', async () => {
+    const user = userEvent.setup()
+    const client = new SystemSolverClient()
+    const solve = vi.spyOn(client, 'solve')
+    render(<ScientificCalculator solverClient={client} />)
+
+    await user.click(screen.getByRole('button', { name: /calculate result/i }))
+
+    expect(
+      screen.getByRole('heading', { name: /add a relation first/i }),
+    ).toBeVisible()
+    expect(screen.queryByRole('button', { name: /retry python engine/i })).not.toBeInTheDocument()
+    expect(solve).not.toHaveBeenCalled()
+  })
+
   it('opens notation help and keeps relation plot checkboxes disabled', async () => {
     const user = userEvent.setup()
     render(<ScientificCalculator solverClient={new SystemSolverClient()} />)
