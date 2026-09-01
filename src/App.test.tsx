@@ -2,12 +2,11 @@ import { render, screen } from '@testing-library/react'
 import App from './App'
 
 describe('App', () => {
-  it('introduces the scientific calculator workspace and keeps plotting disabled', () => {
+  it('hosts both approved calculator workspace columns', () => {
     render(<App />)
 
-    expect(
-      screen.getByRole('heading', { name: /scientific calculator/i }),
-    ).toBeVisible()
+    expect(screen.getByLabelText(/scientific calculator workspace/i)).toBeVisible()
+    expect(screen.getByRole('heading', { name: /shared relations/i })).toBeVisible()
     expect(screen.getByRole('button', { name: /plot.*v2/i })).toBeDisabled()
   })
 })

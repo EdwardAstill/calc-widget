@@ -20,7 +20,7 @@ async function initialize(): Promise<PyodideAPI> {
       indexURL: PYODIDE_INDEX_URL,
     })
     await pyodide.loadPackage('sympy')
-    pyodide.FS.writeFile('/calculator_solver.py', solverSource)
+    pyodide.FS.writeFile('calculator_solver.py', solverSource)
     await pyodide.runPythonAsync('from calculator_solver import solve_payload')
     workerScope.postMessage({ type: 'ready' })
     return pyodide
