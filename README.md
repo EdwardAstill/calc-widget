@@ -1,6 +1,6 @@
 # Scientific Calculator V1
 
-A browser-only symbolic scientific calculator built with React and TypeScript. It combines every saved relation into one real-number system, renders live mathematics, and runs full nonlinear multivariable solving through SymPy in a Pyodide Web Worker.
+A browser-only symbolic scientific calculator built with React and TypeScript. It combines every saved relation into one real-number system, renders live mathematics as native MathML, and runs full nonlinear multivariable solving through SymPy in a Pyodide Web Worker. Bun's built-in Markdown API renders the authored notation guide during development and builds.
 
 V1 includes the Calculator and Shared Relations workspaces. Plot controls are intentionally visible but disabled for V2.
 
@@ -8,13 +8,12 @@ V1 includes the Calculator and Shared Relations workspaces. Plot controls are in
 
 Requirements:
 
-- Node.js 20.19 or newer
-- npm
+- Bun 1.4 or newer
 - An internet connection for the first calculation, when the worker downloads exact-version Pyodide and SymPy assets
 
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 Open the local address printed by Vite. The interface and parser load immediately; the first calculation takes longer while the Python engine starts. Later calculations reuse the running worker.
@@ -58,10 +57,10 @@ The result panel distinguishes:
 Run the browser-side unit and component tests, static checks, lint, and production build:
 
 ```bash
-npm run test:run
-npm run typecheck
-npm run lint
-npm run build
+bun run test:run
+bun run typecheck
+bun run lint
+bun run build
 ```
 
 The trusted Python solver also has an independent contract suite:
@@ -76,7 +75,8 @@ python3 -m venv .venv
 
 ```text
 React workspace
-├── TypeScript tokenizer, parser, AST analysis, and KaTeX generation
+├── TypeScript tokenizer, parser, AST analysis, and native MathML generation
+├── Bun Markdown build step for the notation guide
 ├── relation reducer and accessible UI components
 └── typed solver client
     └── Web Worker
@@ -91,13 +91,14 @@ The embeddable feature and its public exports live in `src/calculator/`; `src/Ap
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Start the Vite development server |
-| `npm run test` | Run Vitest in watch mode |
-| `npm run test:run` | Run tests once |
-| `npm run typecheck` | Run the TypeScript project checks |
-| `npm run lint` | Run Oxlint |
-| `npm run build` | Create the production bundle in `dist/` |
-| `npm run preview` | Preview the production bundle |
+| `bun run generate:help` | Render the notation-guide Markdown with `Bun.markdown` |
+| `bun run dev` | Render help and start the Vite development server under Bun |
+| `bun run test` | Render help and run Vitest in watch mode |
+| `bun run test:run` | Run the Bun Markdown test and browser-side tests once |
+| `bun run typecheck` | Run the TypeScript project checks |
+| `bun run lint` | Run Oxlint |
+| `bun run build` | Render help and create the production bundle in `dist/` |
+| `bun run preview` | Preview the production bundle under Bun |
 
 ## V1 limits
 

@@ -1,4 +1,3 @@
-import 'katex/dist/katex.min.css'
 import { Sigma } from 'lucide-react'
 import {
   useEffect,
@@ -17,7 +16,7 @@ import { MathPreview } from './components/MathPreview'
 import { OperationsPanel } from './components/OperationsPanel'
 import { RelationsPanel } from './components/RelationsPanel'
 import { ResultPanel } from './components/ResultPanel'
-import { relationToLatex } from './dsl/latex'
+import { relationToMathMl } from './dsl/mathml'
 import { parseRelation } from './dsl/parser'
 import { initialCalculatorState } from './model'
 import { applyInsertion } from './operations'
@@ -40,7 +39,7 @@ function parseEditor(source: string): EditorParseState {
   if (!source.trim()) return { kind: 'empty' }
   try {
     const ast = parseRelation(source)
-    return { kind: 'valid', ast, latex: relationToLatex(ast) }
+    return { kind: 'valid', ast, mathml: relationToMathMl(ast) }
   } catch (error) {
     return {
       kind: 'invalid',

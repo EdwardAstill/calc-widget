@@ -111,6 +111,15 @@ def test_closed_scientific_query_is_evaluated_exactly():
     assert result["solutions"][0]["queries"][0]["exact"] == "1"
 
 
+def test_display_values_include_native_presentation_mathml():
+    result = solve_payload(payload(query(call("sqrt", number(2)))))
+
+    assert result["status"] == "solved"
+    value = result["solutions"][0]["queries"][0]
+    assert value["mathml"] == "<msqrt><mn>2</mn></msqrt>"
+    assert "katex" not in value["mathml"].lower()
+
+
 def test_bare_query_with_a_free_symbol_is_underdetermined():
     result = solve_payload(payload(query(binary("^", symbol("x"), number(2)))))
 

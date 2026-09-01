@@ -204,7 +204,10 @@ def classify_solution_set(solution_set, variables):
 
 def _display_value(value):
     exact_value = value
-    display = {"exact": str(exact_value), "latex": sp.latex(exact_value)}
+    display = {
+        "exact": str(exact_value),
+        "mathml": sp.mathml(exact_value, printer="presentation"),
+    }
     if not exact_value.free_symbols and exact_value.is_number and not exact_value.is_Integer:
         approximate = str(sp.N(exact_value, 12))
         if approximate != display["exact"]:

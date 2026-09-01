@@ -1,8 +1,8 @@
-import katex from 'katex'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useMemo } from 'react'
-import { relationToLatex } from '../dsl/latex'
+import { relationToMathMl } from '../dsl/mathml'
 import type { Relation } from '../model'
+import { MathMarkup } from './MathMarkup'
 
 type RelationRowProps = {
   relation: Relation
@@ -17,14 +17,7 @@ export function RelationRow({
   onEdit,
   onDelete,
 }: RelationRowProps) {
-  const html = useMemo(
-    () =>
-      katex.renderToString(relationToLatex(relation.ast), {
-        throwOnError: false,
-        strict: false,
-      }),
-    [relation.ast],
-  )
+  const mathml = useMemo(() => relationToMathMl(relation.ast), [relation.ast])
   return (
     <li
       className={`relation-row${editing ? ' relation-row-editing' : ''}`}
@@ -45,10 +38,7 @@ export function RelationRow({
           </span>
           {editing && <span className="editing-pill">Editing</span>}
         </div>
-        <span
-          className="relation-math"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <MathMarkup className="relation-math" mathml={mathml} />
         <code className="relation-source">{relation.source}</code>
       </div>
       <div className="relation-actions">

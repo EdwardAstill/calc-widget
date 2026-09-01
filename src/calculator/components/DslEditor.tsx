@@ -3,7 +3,7 @@ import type { RelationAst } from '../dsl/ast'
 
 export type EditorParseState =
   | { kind: 'empty' }
-  | { kind: 'valid'; ast: RelationAst; latex: string }
+  | { kind: 'valid'; ast: RelationAst; mathml: string }
   | { kind: 'invalid'; message: string }
 
 type DslEditorProps = {

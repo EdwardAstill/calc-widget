@@ -13,7 +13,7 @@ export function MathPreview({ parsed }: { parsed: EditorParseState }) {
         aria-label="Rendered math preview"
       >
         {parsed.kind === 'valid' ? (
-          <MathMarkup latex={parsed.latex} />
+          <MathMarkup mathml={parsed.mathml} />
         ) : (
           <p>
             {parsed.kind === 'invalid'

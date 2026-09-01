@@ -2,7 +2,7 @@ import type { RelationAst } from '../dsl/ast'
 
 export type DisplayValue = {
   exact: string
-  latex: string
+  mathml: string
   approximate?: string
 }
 

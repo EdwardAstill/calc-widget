@@ -4,16 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "generate:help": "bun run scripts/render-help.ts",
+    "dev": "bun run generate:help && bun --bun vite",
+    "build": "bun run generate:help && tsc -b && bun --bun vite build",
     "lint": "oxlint",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "bun run generate:help && bun --bun vitest",
+    "test:run": "bun run generate:help && bun test tests/bun && bun --bun vitest run",
     "typecheck": "tsc -b --pretty false",
-    "preview": "vite preview"
+    "preview": "bun --bun vite preview"
   },
   "dependencies": {
-    "katex": "^0.18.5",
     "lucide-react": "^1.39.0",
     "pyodide": "^314.0.6",
     "react": "^19.2.8",

@@ -12,7 +12,7 @@ const solved: SolverResult = {
   variables: ['x'],
   solutions: [
     {
-      assignments: { x: { exact: '1', latex: '1' } },
+      assignments: { x: { exact: '1', mathml: '<mn>1</mn>' } },
       queries: [],
     },
   ],

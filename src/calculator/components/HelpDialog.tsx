@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { useEffect, useRef } from 'react'
+import { HELP_CONTENT_HTML } from '../generated/help-content'
 
 type HelpDialogProps = {
   open: boolean
@@ -49,34 +50,10 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
             <X aria-hidden="true" />
           </button>
         </header>
-        <div className="help-content">
-          <section>
-            <h3>Natural input</h3>
-            <p>
-              Implicit multiplication works: <code>2x</code>, <code>2(x+1)</code>, and <code>(x+1)(x-1)</code>.
-              Functions accept ordinary parentheses; curly braces are optional.
-            </p>
-          </section>
-          <section>
-            <h3>Shared system</h3>
-            <p>
-              Save equations as constraints and bare expressions as queries. Calculate uses every saved row together and returns all discrete real solutions.
-            </p>
-          </section>
-          <section>
-            <h3>Symbolic work</h3>
-            <p>
-              Try <code>factor(x^2-1)</code>, <code>diff(x^3, x)</code>, or <code>integrate(sin(x), x)</code>.
-              Underdetermined systems are reported directly rather than shown with generated parameters.
-            </p>
-          </section>
-          <section>
-            <h3>V1 result states</h3>
-            <p>
-              No solution means the real set is proven empty. Unresolved means the request is valid but SymPy could not produce a decisive finite result. Unsupported identifies a feature outside V1.
-            </p>
-          </section>
-        </div>
+        <div
+          className="help-content"
+          dangerouslySetInnerHTML={{ __html: HELP_CONTENT_HTML }}
+        />
       </section>
     </div>
   )

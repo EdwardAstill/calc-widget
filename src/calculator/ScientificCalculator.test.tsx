@@ -25,12 +25,12 @@ class SystemSolverClient implements SolverClient {
       variables: ['x'],
       solutions: [
         {
-          assignments: { x: { exact: '-1', latex: '-1' } },
-          queries: [{ exact: '-1', latex: '-1' }],
+          assignments: { x: { exact: '-1', mathml: '<mn>-1</mn>' } },
+          queries: [{ exact: '-1', mathml: '<mn>-1</mn>' }],
         },
         {
-          assignments: { x: { exact: '1', latex: '1' } },
-          queries: [{ exact: '1', latex: '1' }],
+          assignments: { x: { exact: '1', mathml: '<mn>1</mn>' } },
+          queries: [{ exact: '1', mathml: '<mn>1</mn>' }],
         },
       ],
     }

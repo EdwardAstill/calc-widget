@@ -4,9 +4,9 @@
 
 **Goal:** Build the approved browser-only V1 scientific calculator with a typed forgiving DSL, persistent shared relations, and real nonlinear symbolic solving in a Pyodide Web Worker.
 
-**Architecture:** A shadcn-compatible React feature owns interaction and reducer state. Pure TypeScript modules parse source into a serializable AST, analyze it, and produce KaTeX; a typed worker client sends only AST data to a trusted Python module that constructs SymPy objects recursively.
+**Architecture:** A shadcn-compatible React feature owns interaction and reducer state. Pure TypeScript modules parse source into a serializable AST, analyze it, and produce native MathML; a typed worker client sends only AST data to a trusted Python module that constructs SymPy objects recursively and returns presentation MathML. Bun renders the authored Markdown help during development and production builds.
 
-**Tech Stack:** Vite 8, React 19, TypeScript 7, Vitest 4, Testing Library, KaTeX 0.18, Lucide React, Pyodide 314, Python/SymPy, CSS custom properties.
+**Tech Stack:** Bun 1.4, Vite 8, React 19, TypeScript 6, Vitest 4, Testing Library, native MathML, Lucide React, Pyodide 314, Python/SymPy, CSS custom properties.
 
 **Spec:** `docs/superpowers/specs/2026-09-01-scientific-calculator-v1-design.md`
 
@@ -25,7 +25,7 @@
 ## File Map
 
 ```text
-src/calculator/dsl/                 AST, tokenizer, parser, analysis, KaTeX
+src/calculator/dsl/                 AST, tokenizer, parser, analysis, MathML
 src/calculator/solver/              protocol, preflight, Python, worker, client
 src/calculator/components/          focused workspace components
 src/calculator/model.ts             domain state types
@@ -43,18 +43,18 @@ tests/python/test_solver.py         CPython solver contract suite
 ### Task 1: Scaffold a tested Vite application
 
 **Files:**
-- Create: `package.json`, `package-lock.json`, `index.html`, `vite.config.ts`, `tsconfig*.json`, `eslint.config.js`, `.gitignore`
+- Create: `package.json`, `bun.lock`, `index.html`, `vite.config.ts`, `tsconfig*.json`, `.oxlintrc.json`, `.gitignore`
 - Create: `src/main.tsx`, `src/App.tsx`, `src/styles.css`, `src/test/setup.ts`, `src/App.test.tsx`
 
 **Interfaces:**
-- Produces: npm scripts `dev`, `build`, `lint`, `test:run`, and `typecheck`; a minimal `App` demo host.
+- Produces: Bun scripts `dev`, `build`, `lint`, `test:run`, and `typecheck`; a minimal `App` demo host.
 
 - [ ] **Step 1: Scaffold and install pinned dependencies**
 
 ```bash
-npm create vite@9.2.0 . -- --template react-ts
-npm install react@19.2.8 react-dom@19.2.8 katex@0.18.5 lucide-react@1.39.0 pyodide@314.0.6
-npm install -D typescript@7.0.2 vite@8.2.2 @vitejs/plugin-react@6.1.1 vitest@4.1.11 jsdom@30.0.1 @testing-library/react@16.3.3 @testing-library/jest-dom @testing-library/user-event eslint@10.9.1
+bun create vite . --template react-ts
+bun add react@19.2.8 react-dom@19.2.8 lucide-react@1.39.0 pyodide@314.0.6
+bun add -d typescript@6.0.3 vite@8.2.2 @vitejs/plugin-react@6.1.0 vitest@4.1.11 jsdom@30.0.1 @testing-library/react@16.3.3 @testing-library/jest-dom @testing-library/user-event oxlint
 ```
 
 - [ ] **Step 2: Write and run the failing shell test**
@@ -158,11 +158,11 @@ git commit -m "feat: add forgiving calculator dsl"
 ### Task 3: Analyze and render the AST
 
 **Files:**
-- Create: `src/calculator/dsl/analyze.ts`, `analyze.test.ts`, `latex.ts`, `latex.test.ts`
+- Create: `src/calculator/dsl/analyze.ts`, `analyze.test.ts`, `mathml.ts`, `mathml.test.ts`
 - Create: `src/calculator/solver/preflight.ts`, `preflight.test.ts`
 
 **Interfaces:**
-- Produces: `collectFreeSymbols`, `collectEquationSymbols`, `toLatex`, `relationToLatex`, and `preflight`.
+- Produces: `collectFreeSymbols`, `collectEquationSymbols`, `toMathMl`, `relationToMathMl`, and `preflight`.
 
 - [ ] **Step 1: Write failing tests for distinct symbols, the strict rule, and math output**
 
@@ -176,14 +176,14 @@ it("rejects even one zero-variable equation", () => {
   expect(preflight([parseRelation("1=1")])).toMatchObject({ ok: false, status: "overdefined" })
 })
 it("renders implicit products and fractions", () => {
-  expect(relationToLatex(parseRelation("2x+1/3"))).toBe("2x + \\frac{1}{3}")
+  expect(relationToMathMl(parseRelation("2x+1/3"))).toContain("<mfrac>")
 })
 ```
 
 - [ ] **Step 2: Run the focused tests and confirm failure**
 
 ```bash
-npm run test:run -- src/calculator/dsl/analyze.test.ts src/calculator/dsl/latex.test.ts src/calculator/solver/preflight.test.ts
+bun run test:run -- src/calculator/dsl/analyze.test.ts src/calculator/dsl/mathml.test.ts src/calculator/solver/preflight.test.ts
 ```
 
 - [ ] **Step 3: Implement exhaustive visitors and preflight**
@@ -198,7 +198,7 @@ export function preflight(relations: RelationAst[]): PreflightResult {
 }
 ```
 
-Visitors handle every AST variant, bind calculus variable arguments correctly, parenthesize by precedence, and escape symbol text for KaTeX.
+Visitors handle every AST variant, bind calculus variable arguments correctly, parenthesize by precedence, and escape symbol text before generating presentation MathML.
 
 - [ ] **Step 4: Verify and commit**
 
@@ -318,7 +318,7 @@ def build_expr(node, symbols):
     raise UnsupportedFeature(f"Unsupported AST node: {kind}")
 ```
 
-`solve_payload` repeats preflight, declares real symbols, uses exact SymPy values, classifies an empty set only when proven empty, treats finite solutions as discrete, treats free parameters/positive-dimensional sets as underdetermined, and treats unevaluated solver output as unresolved. It validates and deduplicates every candidate, filters non-real values, and serializes exact, LaTeX, and optional approximate forms. Algebra/calculus calls use a closed dispatch table.
+`solve_payload` repeats preflight, declares real symbols, uses exact SymPy values, classifies an empty set only when proven empty, treats finite solutions as discrete, treats free parameters/positive-dimensional sets as underdetermined, and treats unevaluated solver output as unresolved. It validates and deduplicates every candidate, filters non-real values, and serializes exact, presentation-MathML, and optional approximate forms. Algebra/calculus calls use a closed dispatch table.
 
 - [ ] **Step 4: Verify and commit**
 
@@ -463,7 +463,7 @@ return (
 )
 ```
 
-Calculate performs preflight before invoking the worker. KaTeX receives only generated math. Every result status gets distinct copy and semantics. Buttons insert at the current selection. The Help dialog documents notation, examples, and statuses.
+Calculate performs preflight before invoking the worker. Native MathML is produced only from validated AST data or trusted SymPy values. Every result status gets distinct copy and semantics. Buttons insert at the current selection. The Help dialog is authored as Markdown and rendered by Bun with HTML filtering enabled.
 
 - [ ] **Step 4: Implement the approved visual system**
 
@@ -549,6 +549,6 @@ Check desktop and narrow layout, keyboard focus, add/edit/delete, disabled Plot 
 ```bash
 rg -n "console\\.(log|debug)|plot[^\n]*(enabled|onClick)" src README.md docs || true
 git status --short
-git add src/App.tsx src/App.test.tsx README.md package.json package-lock.json
+git add src/App.tsx src/App.test.tsx README.md package.json bun.lock
 git commit -m "docs: finish calculator demo and usage"
 ```

@@ -1,26 +1,13 @@
-import katex from 'katex'
-import { useMemo } from 'react'
-
 type MathMarkupProps = {
-  latex: string
+  mathml: string
   className?: string
 }
 
-export function MathMarkup({ latex, className }: MathMarkupProps) {
-  const html = useMemo(
-    () =>
-      katex.renderToString(latex, {
-        throwOnError: false,
-        strict: false,
-        output: 'html',
-      }),
-    [latex],
-  )
-
+export function MathMarkup({ mathml, className }: MathMarkupProps) {
   return (
     <span
       className={className}
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: mathml }}
     />
   )
 }

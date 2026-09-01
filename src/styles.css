@@ -444,6 +444,14 @@ code {
   background: rgb(240 125 125 / 0.025);
 }
 
+math {
+  font-family: 'Cambria Math', 'STIX Two Math', serif;
+}
+
+.math-preview math {
+  font-size: 1.15em;
+}
+
 .operations-section {
   margin-top: 0.85rem;
 }
@@ -663,6 +671,11 @@ code {
   overflow-x: auto;
   color: var(--text);
   font-size: 0.87rem;
+}
+
+.relation-math math,
+.result-value math {
+  display: inline-block;
 }
 
 .relation-source {
@@ -938,14 +951,22 @@ code {
   padding: 1.2rem;
 }
 
-.help-content section {
+.help-content ul {
+  display: contents;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.help-content li {
   padding: 0.9rem;
   border: 1px solid var(--line);
   border-radius: 0.75rem;
   background: #10141a;
 }
 
-.help-content h3 {
+.help-content strong {
+  display: block;
   margin: 0 0 0.5rem;
   color: var(--text-soft);
   font-size: 0.78rem;

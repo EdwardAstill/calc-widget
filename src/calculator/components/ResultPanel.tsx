@@ -19,7 +19,9 @@ function Value({ value }: { value: DisplayValue }) {
   return (
     <span className="result-value">
       <span aria-hidden="true">
-        <MathMarkup latex={value.latex} />
+        <MathMarkup
+          mathml={`<math xmlns="http://www.w3.org/1998/Math/MathML">${value.mathml}</math>`}
+        />
       </span>
       <code className="sr-only">{value.exact}</code>
       {value.approximate && <small>≈ {value.approximate}</small>}
