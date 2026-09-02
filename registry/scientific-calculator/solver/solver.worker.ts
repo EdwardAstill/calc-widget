@@ -44,7 +44,7 @@ async function solve(request: SolverRequest): Promise<void> {
     const pyodide = await pyodidePromise
     pyodide.globals.set(
       '_calculator_payload_json',
-      JSON.stringify({ relations: request.relations }),
+      JSON.stringify({ mode: request.mode, relations: request.relations }),
     )
     try {
       const resultJson = await pyodide.runPythonAsync(`

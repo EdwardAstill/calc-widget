@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 
@@ -8,7 +8,11 @@ import type { SolverClient, SolverEngineSnapshot } from './solver/client'
 import type { SolverResult } from './solver/protocol'
 
 class TestSolverClient implements SolverClient {
-  readonly solve = vi.fn(async (_relations: RelationAst[]): Promise<SolverResult> => ({
+  readonly start = vi.fn()
+  readonly solve = vi.fn(async (
+    _relations: RelationAst[],
+    _mode?: 'system' | 'symbolic',
+  ): Promise<SolverResult> => ({
     status: 'solved',
     variables: ['x'],
     solutions: [{ assignments: { x: { exact: '2', mathml: '<mn>2</mn>' } }, queries: [] }],
@@ -30,8 +34,18 @@ it('renders a compact editor with a persistent preview inside one card', () => {
   expect(screen.queryByRole('heading', { name: 'Relations' })).not.toBeInTheDocument()
   expect(screen.queryByText('Preview')).not.toBeInTheDocument()
   expect(screen.getByLabelText(/calculator expression/i)).toHaveAttribute('data-slot', 'input')
-  expect(screen.getByLabelText(/rendered math preview/i)).toBeVisible()
+  const preview = screen.getByLabelText(/rendered math preview/i)
+  expect(preview).toBeVisible()
+  expect(preview.querySelector('[data-slot="alert-title"]')).toBeNull()
   expect(screen.queryByText('Enter an equation or a symbolic query.')).not.toBeInTheDocument()
+})
+
+it('starts the Python solver when the calculator mounts', () => {
+  const client = new TestSolverClient()
+
+  render(<ScientificCalculator solverClient={client} />)
+
+  expect(client.start).toHaveBeenCalledOnce()
 })
 
 it('adds a relation and calculates it with shadcn controls', async () => {
@@ -42,26 +56,34 @@ it('adds a relation and calculates it with shadcn controls', async () => {
   expect(screen.getByRole('button', { name: /plot.*v2/i })).toBeDisabled()
   await user.type(screen.getByLabelText(/calculator expression/i), 'x=2')
   await user.click(screen.getByRole('button', { name: /add relation/i }))
-  expect(screen.getByTestId('relation-row')).toHaveTextContent('x=2')
-  expect(screen.getByRole('button', { name: 'Edit x=2' })).toBeVisible()
-  expect(screen.getByRole('button', { name: 'Delete x=2' })).toBeVisible()
+  const row = screen.getByTestId('relation-row')
+  expect(row.querySelector('math')).not.toBeNull()
+  expect(row.querySelector('code')).not.toBeInTheDocument()
+
+  for (const action of ['Solve', 'Edit', 'Delete']) {
+    expect(screen.getByRole('button', { name: `${action} x=2` })).toHaveTextContent('')
+  }
+  await act(async () => screen.getByRole('button', { name: 'Solve x=2' }).focus())
+  expect(await screen.findByText('Solve')).toBeVisible()
 
   await user.click(screen.getByRole('button', { name: /calculate/i }))
   expect(await screen.findByText(/solved over the reals/i)).toBeVisible()
   expect(client.solve).toHaveBeenCalledOnce()
 })
 
-it('lets a relation be selected for plotting', async () => {
+it('uses the relation checkbox to enable or disable calculation', async () => {
   const user = userEvent.setup()
   render(<ScientificCalculator solverClient={new TestSolverClient()} />)
 
   await user.type(screen.getByLabelText(/calculator expression/i), 'x=2')
   await user.click(screen.getByRole('button', { name: /add relation/i }))
 
-  const plot = screen.getByRole('checkbox', { name: 'Plot x=2' })
-  expect(plot).not.toBeChecked()
-  await user.click(plot)
-  expect(plot).toBeChecked()
+  const enabled = screen.getByRole('checkbox', { name: 'Enable x=2' })
+  expect(enabled).toBeChecked()
+  await user.click(enabled)
+  expect(enabled).not.toBeChecked()
+  expect(screen.getByRole('button', { name: 'Solve x=2' })).toBeDisabled()
+  expect(screen.queryByRole('button', { name: 'Disable x=2' })).not.toBeInTheDocument()
 })
 
 it('solves one relation from its row', async () => {
@@ -79,7 +101,7 @@ it('solves one relation from its row', async () => {
       left: { kind: 'symbol', name: 'x' },
       right: { kind: 'number', value: '2' },
     },
-  ]))
+  ], 'symbolic'))
 })
 
 it('excludes disabled relations from the shared calculation', async () => {
@@ -90,10 +112,9 @@ it('excludes disabled relations from the shared calculation', async () => {
   const editor = screen.getByLabelText(/calculator expression/i)
   await user.type(editor, 'x=2')
   await user.click(screen.getByRole('button', { name: /add relation/i }))
-  await user.click(screen.getByRole('button', { name: 'Disable x=2' }))
+  await user.click(screen.getByRole('checkbox', { name: 'Enable x=2' }))
 
   expect(screen.getByRole('button', { name: 'Solve x=2' })).toBeDisabled()
-  expect(screen.getByRole('button', { name: 'Enable x=2' })).toBeVisible()
 
   await user.type(editor, 'y=3')
   await user.click(screen.getByRole('button', { name: /add relation/i }))
@@ -105,5 +126,5 @@ it('excludes disabled relations from the shared calculation', async () => {
       left: { kind: 'symbol', name: 'y' },
       right: { kind: 'number', value: '3' },
     },
-  ]))
+  ], 'system'))
 })

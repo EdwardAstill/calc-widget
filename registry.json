@@ -122,7 +122,8 @@
         "input",
         "separator",
         "spinner",
-        "tabs"
+        "tabs",
+        "tooltip"
       ],
       "files": [
         { "path": "registry/scientific-calculator/scientific-calculator.tsx", "type": "registry:component", "target": "@components/scientific-calculator/scientific-calculator.tsx" },

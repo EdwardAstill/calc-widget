@@ -2,6 +2,7 @@ import type { RelationAst } from '../dsl/ast'
 import { SOLVER_WORKER_SOURCE } from '../generated/solver-worker-source'
 import type {
   SolverRequest,
+  SolverMode,
   SolverResult,
   SolverWorkerMessage,
 } from './protocol'
@@ -20,7 +21,8 @@ export interface WorkerLike {
 }
 
 export interface SolverClient {
-  solve(relations: RelationAst[]): Promise<SolverResult>
+  start(): void
+  solve(relations: RelationAst[], mode?: SolverMode): Promise<SolverResult>
   getSnapshot(): SolverEngineSnapshot
   subscribe(listener: () => void): () => void
   retry(): void
@@ -116,7 +118,10 @@ export function createSolverClient(
   }
 
   return {
-    solve(relations) {
+    start() {
+      if (!worker) startWorker()
+    },
+    solve(relations, mode = 'system') {
       if (active) {
         const restartWorker = active.posted
         settleActive('This calculation was superseded by a newer request.')
@@ -133,6 +138,7 @@ export function createSolverClient(
         type: 'solve',
         id: `solve-${Date.now()}-${++sequence}`,
         relations,
+        mode,
       }
       const promise = new Promise<SolverResult>((resolve) => {
         active = { request, resolve, posted: false }

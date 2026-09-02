@@ -197,7 +197,7 @@ def _classify_nested_sets(values, variables):
     }
 
 
-def classify_solution_set(solution_set, variables):
+def classify_solution_set(solution_set, variables, allow_symbolic=False):
     """Classify a SymPy set without conflating unknown and empty results."""
     if solution_set is sp.EmptySet or solution_set == sp.EmptySet:
         return {"status": "no-solution", "message": "No real solution exists."}
@@ -224,7 +224,7 @@ def classify_solution_set(solution_set, variables):
             if nested_classification["status"] == "no-solution":
                 continue
             return nested_classification
-        if any(value.free_symbols for value in values):
+        if any(value.free_symbols for value in values) and not allow_symbolic:
             return _underdetermined(variables)
         if any(value.is_real is False for value in values):
             continue
@@ -265,7 +265,7 @@ def _query_allows_symbolic_result(relation):
     )
 
 
-def _evaluate_queries(query_rows, symbols, assignments):
+def _evaluate_queries(query_rows, symbols, assignments, allow_symbolic=False):
     values = []
     unresolved_symbols = set()
     for relation in query_rows:
@@ -284,7 +284,11 @@ def _evaluate_queries(query_rows, symbols, assignments):
             raise UnresolvedValueError(
                 "SymPy could not establish a valid real value for this query."
             )
-        if value.free_symbols and not _query_allows_symbolic_result(relation):
+        if (
+            value.free_symbols
+            and not allow_symbolic
+            and not _query_allows_symbolic_result(relation)
+        ):
             unresolved_symbols.update(value.free_symbols)
         values.append(value)
     return values, unresolved_symbols
@@ -316,6 +320,10 @@ def solve_payload(payload):
         relations = payload.get("relations", []) if isinstance(payload, dict) else []
         if not relations:
             return {"status": "error", "message": "No relations were supplied."}
+        mode = payload.get("mode", "system")
+        if mode not in {"system", "symbolic"}:
+            raise UnsupportedFeature(f"Unsupported solver mode: {mode}")
+        allow_symbolic = mode == "symbolic"
 
         equation_rows = [row for row in relations if row.get("kind") == "equation"]
         query_rows = [row for row in relations if row.get("kind") == "query"]
@@ -340,7 +348,9 @@ def solve_payload(payload):
         ]
 
         if not equations:
-            query_values, free = _evaluate_queries(query_rows, symbols, {})
+            query_values, free = _evaluate_queries(
+                query_rows, symbols, {}, allow_symbolic=allow_symbolic
+            )
             if free:
                 return _underdetermined(free)
             return {
@@ -355,7 +365,9 @@ def solve_payload(payload):
             }
 
         solution_set = sp.nonlinsolve(equations, variables)
-        classification = classify_solution_set(solution_set, variables)
+        classification = classify_solution_set(
+            solution_set, variables, allow_symbolic=allow_symbolic
+        )
         if classification["status"] != "solved":
             return classification
 
@@ -370,16 +382,27 @@ def solve_payload(payload):
         if not valid:
             return {"status": "no-solution", "message": "No real solution exists."}
 
+        display_variables = [
+            variable
+            for variable in variables
+            if not allow_symbolic
+            or any(assignments[variable] != variable for _, assignments in valid)
+        ]
         serialized_solutions = []
         for _, assignments in valid:
-            query_values, free = _evaluate_queries(query_rows, symbols, assignments)
+            query_values, free = _evaluate_queries(
+                query_rows,
+                symbols,
+                assignments,
+                allow_symbolic=allow_symbolic,
+            )
             if free:
                 return _underdetermined(free)
             serialized_solutions.append(
                 {
                     "assignments": {
                         str(variable): _display_value(assignments[variable])
-                        for variable in variables
+                        for variable in display_variables
                     },
                     "queries": [_display_value(value) for value in query_values],
                 }
@@ -387,7 +410,7 @@ def solve_payload(payload):
 
         return {
             "status": "solved",
-            "variables": variable_names,
+            "variables": [str(variable) for variable in display_variables],
             "solutions": serialized_solutions,
         }
     except UndefinedDomainError as error:

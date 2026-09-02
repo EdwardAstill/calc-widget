@@ -37,6 +37,12 @@ import {
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 import { ResultCard } from './components/result-card'
 import type { RelationAst } from './dsl/ast'
@@ -52,7 +58,7 @@ import {
   type SolverEngineSnapshot,
 } from './solver/client'
 import { preflight } from './solver/preflight'
-import type { SolverResult } from './solver/protocol'
+import type { SolverMode, SolverResult } from './solver/protocol'
 
 type ScientificCalculatorProps = { solverClient?: SolverClient }
 
@@ -90,6 +96,7 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
   )
 
   useEffect(() => {
+    client.start()
     if (solverClient) return
     return () => client.dispose()
   }, [client, solverClient])
@@ -124,7 +131,10 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
     })
   }
 
-  async function solveRelations(relations: RelationAst[]) {
+  async function solveRelations(
+    relations: RelationAst[],
+    mode: SolverMode = 'system',
+  ) {
     if (relations.length === 0) {
       dispatch({
         type: 'local-diagnostic',
@@ -151,7 +161,7 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
       }
     } else {
       try {
-        result = await client.solve(relations)
+        result = await client.solve(relations, mode)
       } catch (error) {
         result = {
           status: 'error',
@@ -218,7 +228,6 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
               </Field>
 
               <Alert aria-label="Rendered math preview">
-                <AlertTitle aria-hidden="true">&nbsp;</AlertTitle>
                 <AlertDescription>
                   {parsed.kind === 'valid' ? (
                     <span dangerouslySetInnerHTML={{ __html: parsed.mathml }} />
@@ -260,67 +269,83 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
             <Separator className="lg:hidden" />
 
             <section className="flex min-h-[32rem] flex-col gap-4">
-              <div className="grid gap-3">
-                {state.relations.length === 0 ? (
+              <TooltipProvider>
+                <div className="grid gap-3">
+                  {state.relations.length === 0 ? (
                   <Alert>
                     <AlertTitle>No relations yet</AlertTitle>
                     <AlertDescription>Add an expression from the editor.</AlertDescription>
                   </Alert>
-                ) : state.relations.map((relation, index) => (
+                  ) : state.relations.map((relation, index) => (
                   <div className="grid gap-3" key={relation.id}>
                     <div className="flex items-center gap-3" data-testid="relation-row">
                       <Checkbox
-                        checked={relation.plotted}
-                        aria-label={`Plot ${relation.source}`}
-                        onCheckedChange={(plotted) => {
-                          dispatch({ type: 'plot-changed', id: relation.id, plotted })
+                        checked={relation.enabled}
+                        aria-label={`Enable ${relation.source}`}
+                        onCheckedChange={(enabled) => {
+                          dispatch({ type: 'enabled-changed', id: relation.id, enabled })
                         }}
                       />
-                      <code className="min-w-0 flex-1 break-all">{relation.source}</code>
-                      <Button
-                        size="sm"
-                        aria-label={`Solve ${relation.source}`}
-                        disabled={!relation.enabled || state.solver.phase === 'loading'}
-                        onClick={() => void solveRelations([relation.ast])}
-                      >
-                        <Calculator /> Solve
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        aria-label={`Edit ${relation.source}`}
-                        onClick={() => {
-                          dispatch({ type: 'edit', id: relation.id })
-                          queueMicrotask(() => editorRef.current?.focus())
-                        }}
-                      >
-                        <Pencil /> Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        aria-label={`${relation.enabled ? 'Disable' : 'Enable'} ${relation.source}`}
-                        onClick={() => dispatch({
-                          type: 'enabled-changed',
-                          id: relation.id,
-                          enabled: !relation.enabled,
-                        })}
-                      >
-                        {relation.enabled ? 'Disable' : 'Enable'}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        aria-label={`Delete ${relation.source}`}
-                        onClick={() => dispatch({ type: 'delete', id: relation.id })}
-                      >
-                        <Trash2 /> Delete
-                      </Button>
+                      <span className="min-w-0 flex-1" aria-label={relation.source}>
+                        <span
+                          aria-hidden="true"
+                          dangerouslySetInnerHTML={{ __html: relationToMathMl(relation.ast) }}
+                        />
+                      </span>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={(
+                            <Button
+                              size="icon-sm"
+                              aria-label={`Solve ${relation.source}`}
+                              disabled={!relation.enabled || state.solver.phase === 'loading'}
+                              onClick={() => void solveRelations([relation.ast], 'symbolic')}
+                            >
+                              <Calculator />
+                            </Button>
+                          )}
+                        />
+                        <TooltipContent>Solve</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={(
+                            <Button
+                              variant="outline"
+                              size="icon-sm"
+                              aria-label={`Edit ${relation.source}`}
+                              onClick={() => {
+                                dispatch({ type: 'edit', id: relation.id })
+                                queueMicrotask(() => editorRef.current?.focus())
+                              }}
+                            >
+                              <Pencil />
+                            </Button>
+                          )}
+                        />
+                        <TooltipContent>Edit</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={(
+                            <Button
+                              variant="destructive"
+                              size="icon-sm"
+                              aria-label={`Delete ${relation.source}`}
+                              onClick={() => dispatch({ type: 'delete', id: relation.id })}
+                            >
+                              <Trash2 />
+                            </Button>
+                          )}
+                        />
+                        <TooltipContent>Delete</TooltipContent>
+                      </Tooltip>
                     </div>
                     {index < state.relations.length - 1 ? <Separator /> : null}
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </TooltipProvider>
               <div>
                 <Button onClick={() => void calculate()} disabled={state.solver.phase === 'loading'}>
                   <Calculator /> Calculate

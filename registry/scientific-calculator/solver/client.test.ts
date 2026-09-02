@@ -69,10 +69,22 @@ describe('createSolverClient', () => {
     await expect(pending).resolves.toMatchObject({ status: 'error' })
   })
 
+  it('starts loading the Python worker before a solve request', () => {
+    const worker = new FakeWorker()
+    const client = createSolverClient(() => worker)
+
+    client.start()
+
+    expect(client.getSnapshot()).toEqual({ phase: 'loading' })
+    expect(worker.posted).toHaveLength(0)
+    worker.emit({ type: 'ready' })
+    expect(client.getSnapshot()).toEqual({ phase: 'ready' })
+  })
+
   it('queues while loading, correlates responses, and ignores unknown ids', async () => {
     const worker = new FakeWorker()
     const client = createSolverClient(() => worker)
-    const pending = client.solve([parseRelation('x=1')])
+    const pending = client.solve([parseRelation('x=1')], 'symbolic')
 
     expect(client.getSnapshot()).toEqual({ phase: 'loading' })
     expect(worker.posted).toHaveLength(0)
@@ -80,6 +92,7 @@ describe('createSolverClient', () => {
     worker.emit({ type: 'ready' })
     expect(worker.posted).toHaveLength(1)
     expect(worker.posted[0].relations[0].kind).toBe('equation')
+    expect(worker.posted[0].mode).toBe('symbolic')
 
     worker.emit({
       type: 'result',

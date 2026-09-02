@@ -29,10 +29,13 @@ export type SolverResult =
   | { status: 'unsupported'; message: string; feature?: string }
   | { status: 'error'; message: string }
 
+export type SolverMode = 'system' | 'symbolic'
+
 export type SolverRequest = {
   type: 'solve'
   id: string
   relations: RelationAst[]
+  mode: SolverMode
 }
 
 export type SolverWorkerMessage =

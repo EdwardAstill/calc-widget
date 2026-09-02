@@ -130,6 +130,35 @@ def test_bare_query_with_a_free_symbol_is_underdetermined():
     assert result["symbols"] == ["x"]
 
 
+def test_symbolic_mode_returns_a_bare_expression_with_free_variables():
+    expression = binary(
+        "+",
+        binary("*", number(2), symbol("x")),
+        binary("/", number(3), number(4)),
+    )
+
+    result = solve_payload({"mode": "symbolic", "relations": [query(expression)]})
+
+    assert result["status"] == "solved"
+    assert result["solutions"][0]["queries"][0]["exact"] == "2*x + 3/4"
+
+
+def test_symbolic_mode_returns_the_determined_side_of_a_partial_equation():
+    derivative = call(
+        "diff",
+        binary("^", symbol("u"), number(2)),
+        symbol("u"),
+    )
+
+    result = solve_payload(
+        {"mode": "symbolic", "relations": [equation(derivative, symbol("x"))]}
+    )
+
+    assert result["status"] == "solved"
+    assert result["variables"] == ["u"]
+    assert result["solutions"][0]["assignments"]["u"]["exact"] == "x/2"
+
+
 def test_repeats_the_strict_overdefined_rule_in_the_solver():
     duplicate = equation(symbol("x"), number(1))
     result = solve_payload(payload(duplicate, duplicate))
