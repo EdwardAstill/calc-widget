@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 tmp
+.worktrees/
 .venv
 __pycache__/
 *.pyc
