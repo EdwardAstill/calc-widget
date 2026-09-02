@@ -6,8 +6,9 @@
   "scripts": {
     "generate:help": "bun run scripts/render-help.ts",
     "generate:solver": "bun run scripts/render-solver-source.ts",
+    "generate:worker": "bun run scripts/render-solver-worker.ts",
     "generate:css": "bunx @tailwindcss/cli -i preview/globals.css -o preview/generated.css --minify",
-    "generate:assets": "bun run generate:help && bun run generate:solver",
+    "generate:assets": "bun run generate:help && bun run generate:solver && bun run generate:worker",
     "dev": "bun run generate:assets && bun run generate:css && bun preview/index.html --console",
     "build": "bun run generate:assets && bun run generate:css && bun run typecheck && bun build preview/index.html --minify --outdir dist",
     "lint": "oxlint",

@@ -21,13 +21,15 @@ class TestSolverClient implements SolverClient {
   subscribe() { return () => undefined }
 }
 
-it('renders calculation and relations inside one card', () => {
+it('renders a compact editor with a persistent preview inside one card', () => {
   const { container } = render(<ScientificCalculator solverClient={new TestSolverClient()} />)
 
   expect(container.querySelectorAll('[data-slot="card"]')).toHaveLength(1)
   expect(screen.queryByRole('heading', { name: /scientific calculator/i })).not.toBeInTheDocument()
-  expect(screen.getByRole('heading', { name: 'Calculation' })).toBeVisible()
-  expect(screen.getByRole('heading', { name: 'Relations' })).toBeVisible()
+  expect(screen.queryByRole('heading', { name: 'Calculation' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Relations' })).not.toBeInTheDocument()
+  expect(screen.getByLabelText(/calculator expression/i)).toHaveAttribute('data-slot', 'input')
+  expect(screen.getByLabelText(/rendered math preview/i)).toBeVisible()
   expect(screen.queryByText('Enter an equation or a symbolic query.')).not.toBeInTheDocument()
 })
 

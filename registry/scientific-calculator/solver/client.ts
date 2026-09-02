@@ -1,4 +1,5 @@
 import type { RelationAst } from '../dsl/ast'
+import { SOLVER_WORKER_SOURCE } from '../generated/solver-worker-source'
 import type {
   SolverRequest,
   SolverResult,
@@ -34,10 +35,18 @@ type ActiveRequest = {
   posted: boolean
 }
 
-const defaultWorkerFactory: WorkerFactory = () =>
-  new Worker(new URL('./solver.worker.ts', import.meta.url), {
-    type: 'module',
-  })
+const defaultWorkerFactory: WorkerFactory = () => {
+  const workerUrl = URL.createObjectURL(
+    new Blob([SOLVER_WORKER_SOURCE], { type: 'text/javascript' }),
+  )
+  const worker = new Worker(workerUrl, { type: 'module' })
+  const terminate = worker.terminate.bind(worker)
+  worker.terminate = () => {
+    URL.revokeObjectURL(workerUrl)
+    terminate()
+  }
+  return worker
+}
 
 export function createSolverClient(
   workerFactory: WorkerFactory = defaultWorkerFactory,

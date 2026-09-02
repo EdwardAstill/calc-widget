@@ -31,13 +31,12 @@ import {
 } from '@/components/ui/dialog'
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldLabel,
 } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Textarea } from '@/components/ui/textarea'
 
 import { ResultCard } from './components/result-card'
 import type { RelationAst } from './dsl/ast'
@@ -80,7 +79,7 @@ function parseEditor(source: string): EditorParseState {
 export function ScientificCalculator({ solverClient }: ScientificCalculatorProps) {
   const client = useMemo(() => solverClient ?? createSolverClient(), [solverClient])
   const [state, dispatch] = useReducer(calculatorReducer, initialCalculatorState)
-  const editorRef = useRef<HTMLTextAreaElement>(null)
+  const editorRef = useRef<HTMLInputElement>(null)
   const relationSequence = useRef(0)
   const requestSequence = useRef(0)
   const parsed = useMemo(() => parseEditor(state.source), [state.source])
@@ -170,11 +169,6 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
         <CardContent>
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
             <section className="grid content-start gap-4">
-              <div className="flex items-center justify-between gap-4">
-                <h2 className="text-base font-medium">Calculation</h2>
-                {state.editingId ? <Badge>Editing</Badge> : null}
-              </div>
-
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
@@ -197,11 +191,12 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
                 >
                   <CircleHelp />
                 </Button>
+                {state.editingId ? <Badge>Editing</Badge> : null}
               </div>
 
               <Field data-invalid={parsed.kind === 'invalid'}>
                 <FieldLabel htmlFor="calculator-expression">Calculator expression</FieldLabel>
-                <Textarea
+                <Input
                   ref={editorRef}
                   id="calculator-expression"
                   value={state.source}
@@ -209,21 +204,19 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
                   placeholder="2x + 3 = 7"
                   onChange={(event) => dispatch({ type: 'source-changed', source: event.target.value })}
                 />
-                {parsed.kind === 'invalid' ? (
-                  <FieldError>{parsed.message}</FieldError>
-                ) : (
-                  <FieldDescription>Equations constrain the system; bare expressions are queries.</FieldDescription>
-                )}
+                {parsed.kind === 'invalid' ? <FieldError>{parsed.message}</FieldError> : null}
               </Field>
 
-              {parsed.kind === 'valid' ? (
-                <Alert aria-label="Rendered math preview">
-                  <AlertTitle>Preview</AlertTitle>
-                  <AlertDescription>
+              <Alert aria-label="Rendered math preview">
+                <AlertTitle>Preview</AlertTitle>
+                <AlertDescription>
+                  {parsed.kind === 'valid' ? (
                     <span dangerouslySetInnerHTML={{ __html: parsed.mathml }} />
-                  </AlertDescription>
-                </Alert>
-              ) : null}
+                  ) : (
+                    <span aria-hidden="true">&nbsp;</span>
+                  )}
+                </AlertDescription>
+              </Alert>
 
               <Separator />
 
@@ -257,10 +250,6 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
             <Separator className="lg:hidden" />
 
             <section className="flex min-h-[32rem] flex-col gap-4">
-              <div className="flex items-center justify-between gap-4">
-                <h2 className="text-base font-medium">Relations</h2>
-                <Badge variant="outline">{state.relations.length}</Badge>
-              </div>
               <div className="grid gap-3">
                 {state.relations.length === 0 ? (
                   <Alert>

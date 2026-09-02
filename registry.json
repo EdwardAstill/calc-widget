@@ -119,10 +119,10 @@
         "checkbox",
         "dialog",
         "field",
+        "input",
         "separator",
         "spinner",
-        "tabs",
-        "textarea"
+        "tabs"
       ],
       "files": [
         { "path": "registry/scientific-calculator/scientific-calculator.tsx", "type": "registry:component", "target": "@components/scientific-calculator/scientific-calculator.tsx" },
@@ -143,7 +143,8 @@
         { "path": "registry/scientific-calculator/solver/solver.worker.ts", "type": "registry:lib", "target": "@components/scientific-calculator/solver/solver.worker.ts" },
         { "path": "registry/scientific-calculator/solver/solver.py", "type": "registry:file", "target": "@components/scientific-calculator/solver/solver.py" },
         { "path": "registry/scientific-calculator/generated/help-content.ts", "type": "registry:file", "target": "@components/scientific-calculator/generated/help-content.ts" },
-        { "path": "registry/scientific-calculator/generated/solver-source.ts", "type": "registry:file", "target": "@components/scientific-calculator/generated/solver-source.ts" }
+        { "path": "registry/scientific-calculator/generated/solver-source.ts", "type": "registry:file", "target": "@components/scientific-calculator/generated/solver-source.ts" },
+        { "path": "registry/scientific-calculator/generated/solver-worker-source.ts", "type": "registry:file", "target": "@components/scientific-calculator/generated/solver-worker-source.ts" }
       ]
     }
   ]

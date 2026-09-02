@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { parseRelation } from '../dsl/parser'
 import type {
   SolverRequest,
@@ -34,6 +34,41 @@ class FakeWorker implements WorkerLike {
 }
 
 describe('createSolverClient', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('constructs the default worker from a generated module blob', async () => {
+    const createObjectURL = vi.fn(() => 'blob:calculator-solver')
+    const revokeObjectURL = vi.fn()
+    const OriginalURL = globalThis.URL
+    class StubURL extends OriginalURL {
+      static createObjectURL = createObjectURL
+      static revokeObjectURL = revokeObjectURL
+    }
+    const workerConstructor = vi.fn()
+    class BrowserWorker extends FakeWorker {
+      constructor(url: string | URL, options?: WorkerOptions) {
+        super()
+        workerConstructor(url, options)
+      }
+    }
+    vi.stubGlobal('URL', StubURL)
+    vi.stubGlobal('Worker', BrowserWorker)
+
+    const client = createSolverClient()
+    const pending = client.solve([parseRelation('x=1')])
+
+    expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob))
+    expect(workerConstructor).toHaveBeenCalledWith(
+      'blob:calculator-solver',
+      { type: 'module' },
+    )
+    expect(revokeObjectURL).not.toHaveBeenCalled()
+
+    client.dispose()
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:calculator-solver')
+    await expect(pending).resolves.toMatchObject({ status: 'error' })
+  })
+
   it('queues while loading, correlates responses, and ignores unknown ids', async () => {
     const worker = new FakeWorker()
     const client = createSolverClient(() => worker)
