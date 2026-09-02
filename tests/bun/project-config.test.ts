@@ -12,10 +12,13 @@ describe('project configuration', () => {
     const devDependencies = pkg.devDependencies as Record<string, unknown> | undefined
 
     expect(scripts.dev).toContain('bun preview/index.html')
+    expect(scripts.dev).toContain('generate:css')
     expect(scripts.build).toContain('bun build preview/index.html')
     expect(dependencies?.vite).toBeUndefined()
     expect(devDependencies?.vite).toBeUndefined()
     expect(devDependencies?.['@vitejs/plugin-react']).toBeUndefined()
+    expect(devDependencies?.['bun-plugin-tailwind']).toBeUndefined()
+    expect(devDependencies?.['@tailwindcss/cli']).toBe('4.2.1')
   })
 
   test('pins the default Base UI shadcn preset', async () => {

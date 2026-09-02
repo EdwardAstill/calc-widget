@@ -1,6 +1,6 @@
 # Scientific Calculator V1
 
-A browser-only symbolic scientific calculator built with React and TypeScript. It combines every saved relation into one real-number system, renders live mathematics as native MathML, and runs full nonlinear multivariable solving through SymPy in a Pyodide Web Worker. Bun's built-in Markdown API renders the authored notation guide during development and builds.
+A browser-only symbolic scientific calculator distributed as a GitHub shadcn registry. The UI uses the default neutral Base UI Nova shadcn components; the existing TypeScript parser and Pyodide/SymPy worker provide the calculator logic.
 
 V1 includes the Calculator and Shared Relations workspaces. Plot controls are intentionally visible but disabled for V2.
 
@@ -16,7 +16,15 @@ bun install
 bun run dev
 ```
 
-Open the local address printed by Vite. The interface and parser load immediately; the first calculation takes longer while the Python engine starts. Later calculations reuse the running worker.
+Open the local address printed by Bun. The interface and parser load immediately; the first calculation takes longer while the Python engine starts. Later calculations reuse the running worker.
+
+## Install from the registry
+
+```bash
+bunx shadcn@latest add EdwardAstill/calc-widget/scientific-calculator
+```
+
+The block depends on the included `calculator-base` item, which pins shadcn's default neutral Base UI Nova preset. Import `ScientificCalculator` from the installed `components/scientific-calculator` directory.
 
 ## Calculator notation
 
@@ -85,20 +93,20 @@ React workspace
 
 Only validated AST objects cross the worker boundary. User input is never passed to JavaScript evaluation or Python `eval`, `exec`, or `sympify`. The Python adapter recursively constructs SymPy values through closed node and function dispatch tables.
 
-The embeddable feature and its public exports live in `src/calculator/`; `src/App.tsx` is only the Vite demonstration host. That boundary is intended to become the source of a future shadcn registry item.
+The installable source lives in `registry/scientific-calculator/`. `preview/` is a small Bun HTML-entrypoint host for local development only, and the root `registry.json` is the GitHub registry catalog.
 
 ## Scripts
 
 | Command | Purpose |
 | --- | --- |
 | `bun run generate:help` | Render the notation-guide Markdown with `Bun.markdown` |
-| `bun run dev` | Render help and start the Vite development server under Bun |
+| `bun run generate:solver` | Embed the trusted Python solver for the portable worker |
+| `bun run dev` | Render generated assets and start Bun's development server |
 | `bun run test` | Render help and run Vitest in watch mode |
 | `bun run test:run` | Run the Bun Markdown test and browser-side tests once |
 | `bun run typecheck` | Run the TypeScript project checks |
 | `bun run lint` | Run Oxlint |
 | `bun run build` | Render help and create the production bundle in `dist/` |
-| `bun run preview` | Preview the production bundle under Bun |
 
 ## V1 limits
 

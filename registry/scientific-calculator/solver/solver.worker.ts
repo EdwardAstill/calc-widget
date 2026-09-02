@@ -1,5 +1,5 @@
 import type { PyodideAPI } from 'pyodide'
-import solverSource from './solver.py?raw'
+import { SOLVER_SOURCE } from '../generated/solver-source'
 import type { SolverRequest, SolverWorkerMessage } from './protocol'
 
 type WorkerScope = {
@@ -14,13 +14,13 @@ const PYODIDE_INDEX_URL =
 async function initialize(): Promise<PyodideAPI> {
   try {
     const pyodideModule = (await import(
-      /* @vite-ignore */ `${PYODIDE_INDEX_URL}pyodide.mjs`
+      /* @vite-ignore */ /* webpackIgnore: true */ `${PYODIDE_INDEX_URL}pyodide.mjs`
     )) as typeof import('pyodide')
     const pyodide = await pyodideModule.loadPyodide({
       indexURL: PYODIDE_INDEX_URL,
     })
     await pyodide.loadPackage('sympy')
-    pyodide.FS.writeFile('calculator_solver.py', solverSource)
+    pyodide.FS.writeFile('calculator_solver.py', SOLVER_SOURCE)
     await pyodide.runPythonAsync('from calculator_solver import solve_payload')
     workerScope.postMessage({ type: 'ready' })
     return pyodide

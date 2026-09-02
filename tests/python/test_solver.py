@@ -3,7 +3,10 @@ import sys
 
 import sympy as sp
 
-sys.path.insert(0, str(Path(__file__).parents[2] / "src" / "calculator" / "solver"))
+sys.path.insert(
+    0,
+    str(Path(__file__).parents[2] / "registry" / "scientific-calculator" / "solver"),
+)
 
 from solver import classify_solution_set, solve_payload
 
