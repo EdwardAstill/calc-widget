@@ -25,6 +25,7 @@ it('renders calculation and relations inside one card', () => {
   const { container } = render(<ScientificCalculator solverClient={new TestSolverClient()} />)
 
   expect(container.querySelectorAll('[data-slot="card"]')).toHaveLength(1)
+  expect(screen.queryByRole('heading', { name: /scientific calculator/i })).not.toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Calculation' })).toBeVisible()
   expect(screen.getByRole('heading', { name: 'Relations' })).toBeVisible()
   expect(screen.queryByText('Enter an equation or a symbolic query.')).not.toBeInTheDocument()
@@ -39,6 +40,8 @@ it('adds a relation and calculates it with shadcn controls', async () => {
   await user.type(screen.getByLabelText(/calculator expression/i), 'x=2')
   await user.click(screen.getByRole('button', { name: /add relation/i }))
   expect(screen.getByTestId('relation-row')).toHaveTextContent('x=2')
+  expect(screen.getByRole('button', { name: 'Edit x=2' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Delete x=2' })).toBeVisible()
 
   await user.click(screen.getByRole('button', { name: /calculate/i }))
   expect(await screen.findByText(/solved over the reals/i)).toBeVisible()

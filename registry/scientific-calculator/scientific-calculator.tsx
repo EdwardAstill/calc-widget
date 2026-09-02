@@ -5,7 +5,6 @@ import {
   ChartNoAxesColumn,
   CircleHelp,
   Eraser,
-  MoreHorizontal,
   Pencil,
   Plus,
   Trash2,
@@ -21,14 +20,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
@@ -37,12 +29,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   Field,
   FieldDescription,
@@ -181,28 +167,38 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
       aria-label="Scientific calculator workspace"
     >
       <Card>
-        <CardHeader>
-          <CardTitle>
-            <span className="flex items-center gap-2">
-              <Calculator aria-hidden="true" />
-              <h1>Scientific calculator</h1>
-              <Badge variant="secondary">V1</Badge>
-            </span>
-          </CardTitle>
-          <CardDescription>Build a shared system and solve it over the real numbers.</CardDescription>
-          <CardAction>
-            <Button variant="outline" onClick={() => dispatch({ type: 'help-changed', open: true })}>
-              <CircleHelp /> Help
-            </Button>
-          </CardAction>
-        </CardHeader>
         <CardContent>
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(20rem,1fr)]">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
             <section className="grid content-start gap-4">
               <div className="flex items-center justify-between gap-4">
                 <h2 className="text-base font-medium">Calculation</h2>
                 {state.editingId ? <Badge>Editing</Badge> : null}
               </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => dispatch({ type: 'clear-editor' })}
+                  disabled={!state.source && !state.editingId}
+                >
+                  <Eraser /> Clear
+                </Button>
+                <Button onClick={saveRelation} disabled={parsed.kind !== 'valid'}>
+                  <Plus /> {state.editingId ? 'Save relation' : 'Add relation'}
+                </Button>
+                <Button variant="outline" disabled aria-label="Plot — V2">
+                  <ChartNoAxesColumn /> Plot <Badge variant="secondary">V2</Badge>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Calculator help"
+                  onClick={() => dispatch({ type: 'help-changed', open: true })}
+                >
+                  <CircleHelp />
+                </Button>
+              </div>
+
               <Field data-invalid={parsed.kind === 'invalid'}>
                 <FieldLabel htmlFor="calculator-expression">Calculator expression</FieldLabel>
                 <Textarea
@@ -219,22 +215,6 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
                   <FieldDescription>Equations constrain the system; bare expressions are queries.</FieldDescription>
                 )}
               </Field>
-
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={saveRelation} disabled={parsed.kind !== 'valid'}>
-                  <Plus /> {state.editingId ? 'Save relation' : 'Add relation'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => dispatch({ type: 'clear-editor' })}
-                  disabled={!state.source && !state.editingId}
-                >
-                  <Eraser /> Clear
-                </Button>
-                <Button variant="outline" disabled aria-label="Plot — V2">
-                  <ChartNoAxesColumn /> Plot <Badge variant="secondary">V2</Badge>
-                </Button>
-              </div>
 
               {parsed.kind === 'valid' ? (
                 <Alert aria-label="Rendered math preview">
@@ -273,7 +253,10 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
               </Tabs>
             </section>
 
-            <section className="grid content-start gap-4">
+            <Separator className="hidden lg:block" orientation="vertical" />
+            <Separator className="lg:hidden" />
+
+            <section className="flex min-h-[32rem] flex-col gap-4">
               <div className="flex items-center justify-between gap-4">
                 <h2 className="text-base font-medium">Relations</h2>
                 <Badge variant="outline">{state.relations.length}</Badge>
@@ -287,42 +270,41 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
                 ) : state.relations.map((relation, index) => (
                   <div className="grid gap-3" key={relation.id}>
                     <div className="flex items-center gap-3" data-testid="relation-row">
-                      <Checkbox checked disabled aria-label={`Include ${relation.source}`} />
+                      <Checkbox disabled aria-label={`Plot ${relation.source}`} />
                       <code className="min-w-0 flex-1 break-all">{relation.source}</code>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
-                          <MoreHorizontal />
-                          <span className="sr-only">Actions for {relation.source}</span>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              dispatch({ type: 'edit', id: relation.id })
-                              queueMicrotask(() => editorRef.current?.focus())
-                            }}
-                          >
-                            <Pencil /> Edit {relation.source}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => dispatch({ type: 'delete', id: relation.id })}
-                          >
-                            <Trash2 /> Delete {relation.source}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        aria-label={`Edit ${relation.source}`}
+                        onClick={() => {
+                          dispatch({ type: 'edit', id: relation.id })
+                          queueMicrotask(() => editorRef.current?.focus())
+                        }}
+                      >
+                        <Pencil /> Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        aria-label={`Delete ${relation.source}`}
+                        onClick={() => dispatch({ type: 'delete', id: relation.id })}
+                      >
+                        <Trash2 /> Delete
+                      </Button>
                     </div>
                     {index < state.relations.length - 1 ? <Separator /> : null}
                   </div>
                 ))}
               </div>
               <div>
-              <Button onClick={() => void calculate()} disabled={state.solver.phase === 'loading'}>
-                <Calculator /> Calculate
-              </Button>
+                <Button onClick={() => void calculate()} disabled={state.solver.phase === 'loading'}>
+                  <Calculator /> Calculate
+                </Button>
               </div>
-              <Separator />
-              <ResultCard solver={state.solver} engine={engine} onRetry={() => client.retry()} />
+              <div className="mt-auto grid gap-4">
+                <Separator />
+                <ResultCard solver={state.solver} engine={engine} onRetry={() => client.retry()} />
+              </div>
             </section>
           </div>
         </CardContent>
