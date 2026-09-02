@@ -6,6 +6,8 @@ export type Relation = {
   source: string
   ast: RelationAst
   createdAt: number
+  enabled: boolean
+  plotted: boolean
 }
 
 export type SolverState =
@@ -41,6 +43,8 @@ export type CalculatorAction =
     }
   | { type: 'edit'; id: string }
   | { type: 'delete'; id: string }
+  | { type: 'enabled-changed'; id: string; enabled: boolean }
+  | { type: 'plot-changed'; id: string; plotted: boolean }
   | { type: 'clear-editor' }
   | { type: 'clear-all' }
   | { type: 'help-changed'; open: boolean }

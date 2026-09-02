@@ -124,12 +124,14 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
     })
   }
 
-  async function calculate() {
-    if (state.relations.length === 0) {
+  async function solveRelations(relations: RelationAst[]) {
+    if (relations.length === 0) {
       dispatch({
         type: 'local-diagnostic',
         code: 'no-relations',
-        message: 'Add an expression to the shared system first.',
+        message: state.relations.length === 0
+          ? 'Add an expression to the shared system first.'
+          : 'Enable at least one relation first.',
       })
       return
     }
@@ -139,7 +141,7 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
     dispatch({ type: 'solve-started', requestId })
 
     let result: SolverResult
-    const validation = preflight(state.relations.map((relation) => relation.ast))
+    const validation = preflight(relations)
     if (!validation.ok) {
       result = {
         status: validation.status,
@@ -149,7 +151,7 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
       }
     } else {
       try {
-        result = await client.solve(state.relations.map((relation) => relation.ast))
+        result = await client.solve(relations)
       } catch (error) {
         result = {
           status: 'error',
@@ -158,6 +160,14 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
       }
     }
     dispatch({ type: 'solve-finished', requestId, result })
+  }
+
+  function calculate() {
+    return solveRelations(
+      state.relations
+        .filter((relation) => relation.enabled)
+        .map((relation) => relation.ast),
+    )
   }
 
   return (
@@ -259,8 +269,22 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
                 ) : state.relations.map((relation, index) => (
                   <div className="grid gap-3" key={relation.id}>
                     <div className="flex items-center gap-3" data-testid="relation-row">
-                      <Checkbox disabled aria-label={`Plot ${relation.source}`} />
+                      <Checkbox
+                        checked={relation.plotted}
+                        aria-label={`Plot ${relation.source}`}
+                        onCheckedChange={(plotted) => {
+                          dispatch({ type: 'plot-changed', id: relation.id, plotted })
+                        }}
+                      />
                       <code className="min-w-0 flex-1 break-all">{relation.source}</code>
+                      <Button
+                        size="sm"
+                        aria-label={`Solve ${relation.source}`}
+                        disabled={!relation.enabled || state.solver.phase === 'loading'}
+                        onClick={() => void solveRelations([relation.ast])}
+                      >
+                        <Calculator /> Solve
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -271,6 +295,18 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
                         }}
                       >
                         <Pencil /> Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        aria-label={`${relation.enabled ? 'Disable' : 'Enable'} ${relation.source}`}
+                        onClick={() => dispatch({
+                          type: 'enabled-changed',
+                          id: relation.id,
+                          enabled: !relation.enabled,
+                        })}
+                      >
+                        {relation.enabled ? 'Disable' : 'Enable'}
                       </Button>
                       <Button
                         variant="destructive"

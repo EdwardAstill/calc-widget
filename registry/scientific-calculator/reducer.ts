@@ -35,6 +35,8 @@ export function calculatorReducer(
         source: action.source,
         ast: action.ast,
         createdAt: action.now,
+        enabled: true,
+        plotted: false,
       }
       return {
         ...state,
@@ -59,6 +61,25 @@ export function calculatorReducer(
         solver: idleSolver(),
       }
     }
+    case 'enabled-changed':
+      return {
+        ...state,
+        relations: state.relations.map((relation) =>
+          relation.id === action.id
+            ? { ...relation, enabled: action.enabled }
+            : relation,
+        ),
+        solver: idleSolver(),
+      }
+    case 'plot-changed':
+      return {
+        ...state,
+        relations: state.relations.map((relation) =>
+          relation.id === action.id
+            ? { ...relation, plotted: action.plotted }
+            : relation,
+        ),
+      }
     case 'clear-editor':
       return { ...state, source: '', editingId: null }
     case 'clear-all':
