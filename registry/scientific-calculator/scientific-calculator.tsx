@@ -208,7 +208,7 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
               </Field>
 
               <Alert aria-label="Rendered math preview">
-                <AlertTitle>Preview</AlertTitle>
+                <AlertTitle aria-hidden="true">&nbsp;</AlertTitle>
                 <AlertDescription>
                   {parsed.kind === 'valid' ? (
                     <span dangerouslySetInnerHTML={{ __html: parsed.mathml }} />
