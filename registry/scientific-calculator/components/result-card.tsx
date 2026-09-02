@@ -3,14 +3,6 @@ import { AlertCircle, CheckCircle2, Info } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
 
 import type { SolverState } from '../model'
@@ -50,27 +42,23 @@ function Solved({ result }: { result: Extract<SolverResult, { status: 'solved' }
         </AlertDescription>
       </Alert>
       {result.solutions.map((solution, index) => (
-        <Card size="sm" key={`solution-${index + 1}`}>
-          <CardHeader>
-            <CardTitle>Solution {index + 1}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid gap-2">
-              {Object.entries(solution.assignments).map(([name, value]) => (
-                <div className="flex items-center justify-between gap-4" key={name}>
-                  <dt>{name}</dt>
-                  <dd><Value value={value} /></dd>
-                </div>
-              ))}
-              {solution.queries.map((value, queryIndex) => (
-                <div className="flex items-center justify-between gap-4" key={`query-${queryIndex + 1}`}>
-                  <dt>Query {queryIndex + 1}</dt>
-                  <dd><Value value={value} /></dd>
-                </div>
-              ))}
-            </dl>
-          </CardContent>
-        </Card>
+        <section className="grid gap-2" key={`solution-${index + 1}`}>
+          <h3 className="text-sm font-medium">Solution {index + 1}</h3>
+          <dl className="grid gap-2">
+            {Object.entries(solution.assignments).map(([name, value]) => (
+              <div className="flex items-center justify-between gap-4" key={name}>
+                <dt>{name}</dt>
+                <dd><Value value={value} /></dd>
+              </div>
+            ))}
+            {solution.queries.map((value, queryIndex) => (
+              <div className="flex items-center justify-between gap-4" key={`query-${queryIndex + 1}`}>
+                <dt>Query {queryIndex + 1}</dt>
+                <dd><Value value={value} /></dd>
+              </div>
+            ))}
+          </dl>
+        </section>
       ))}
     </div>
   )
@@ -140,13 +128,12 @@ export function ResultCard({ solver, engine, onRetry }: ResultCardProps) {
   }
 
   return (
-    <Card aria-label="Calculation result" aria-live="polite">
-      <CardHeader>
-        <CardTitle>Result</CardTitle>
-        <CardDescription>Real-domain symbolic output</CardDescription>
-        <CardAction><Badge variant="outline">{engine.phase}</Badge></CardAction>
-      </CardHeader>
-      <CardContent>{content}</CardContent>
-    </Card>
+    <section className="grid gap-3" aria-label="Calculation result" aria-live="polite">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-base font-medium">Result</h2>
+        <Badge variant="outline">{engine.phase}</Badge>
+      </div>
+      {content}
+    </section>
   )
 }

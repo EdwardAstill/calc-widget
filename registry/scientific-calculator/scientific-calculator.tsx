@@ -26,7 +26,6 @@ import {
   CardAction,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -178,34 +177,32 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
 
   return (
     <section
-      className="mx-auto grid w-full max-w-6xl gap-4 p-4 md:p-8"
+      className="mx-auto w-full max-w-6xl p-4 md:p-8"
       aria-label="Scientific calculator workspace"
     >
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Calculator aria-hidden="true" />
-            <h1 className="text-xl font-medium">Scientific calculator</h1>
-            <Badge variant="secondary">V1</Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Build a shared system and solve it over the real numbers.
-          </p>
-        </div>
-        <Button variant="outline" onClick={() => dispatch({ type: 'help-changed', open: true })}>
-          <CircleHelp /> Help
-        </Button>
-      </header>
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(20rem,1fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Expression</CardTitle>
-            <CardDescription>Enter an equation or a symbolic query.</CardDescription>
-            {state.editingId ? <CardAction><Badge>Editing</Badge></CardAction> : null}
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <span className="flex items-center gap-2">
+              <Calculator aria-hidden="true" />
+              <h1>Scientific calculator</h1>
+              <Badge variant="secondary">V1</Badge>
+            </span>
+          </CardTitle>
+          <CardDescription>Build a shared system and solve it over the real numbers.</CardDescription>
+          <CardAction>
+            <Button variant="outline" onClick={() => dispatch({ type: 'help-changed', open: true })}>
+              <CircleHelp /> Help
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(20rem,1fr)]">
+            <section className="grid content-start gap-4">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-base font-medium">Calculation</h2>
+                {state.editingId ? <Badge>Editing</Badge> : null}
+              </div>
               <Field data-invalid={parsed.kind === 'invalid'}>
                 <FieldLabel htmlFor="calculator-expression">Calculator expression</FieldLabel>
                 <Textarea
@@ -274,68 +271,62 @@ export function ScientificCalculator({ solverClient }: ScientificCalculatorProps
                   </TabsContent>
                 ))}
               </Tabs>
-            </div>
-          </CardContent>
-        </Card>
+            </section>
 
-        <div className="grid content-start gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Shared relations</CardTitle>
-              <CardDescription>Every saved row is calculated together.</CardDescription>
-              <CardAction><Badge variant="outline">{state.relations.length}</Badge></CardAction>
-            </CardHeader>
-            <CardContent>
+            <section className="grid content-start gap-4">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-base font-medium">Relations</h2>
+                <Badge variant="outline">{state.relations.length}</Badge>
+              </div>
               <div className="grid gap-3">
                 {state.relations.length === 0 ? (
                   <Alert>
                     <AlertTitle>No relations yet</AlertTitle>
                     <AlertDescription>Add an expression from the editor.</AlertDescription>
                   </Alert>
-                ) : state.relations.map((relation) => (
-                  <Card size="sm" key={relation.id} data-testid="relation-row">
-                    <CardContent>
-                      <div className="flex items-center gap-3">
-                        <Checkbox checked disabled aria-label={`Include ${relation.source}`} />
-                        <code className="min-w-0 flex-1 break-all">{relation.source}</code>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
-                            <MoreHorizontal />
-                            <span className="sr-only">Actions for {relation.source}</span>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                dispatch({ type: 'edit', id: relation.id })
-                                queueMicrotask(() => editorRef.current?.focus())
-                              }}
-                            >
-                              <Pencil /> Edit {relation.source}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onClick={() => dispatch({ type: 'delete', id: relation.id })}
-                            >
-                              <Trash2 /> Delete {relation.source}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardContent>
-                  </Card>
+                ) : state.relations.map((relation, index) => (
+                  <div className="grid gap-3" key={relation.id}>
+                    <div className="flex items-center gap-3" data-testid="relation-row">
+                      <Checkbox checked disabled aria-label={`Include ${relation.source}`} />
+                      <code className="min-w-0 flex-1 break-all">{relation.source}</code>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+                          <MoreHorizontal />
+                          <span className="sr-only">Actions for {relation.source}</span>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              dispatch({ type: 'edit', id: relation.id })
+                              queueMicrotask(() => editorRef.current?.focus())
+                            }}
+                          >
+                            <Pencil /> Edit {relation.source}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => dispatch({ type: 'delete', id: relation.id })}
+                          >
+                            <Trash2 /> Delete {relation.source}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    {index < state.relations.length - 1 ? <Separator /> : null}
+                  </div>
                 ))}
               </div>
-            </CardContent>
-            <CardFooter>
+              <div>
               <Button onClick={() => void calculate()} disabled={state.solver.phase === 'loading'}>
                 <Calculator /> Calculate
               </Button>
-            </CardFooter>
-          </Card>
-
-          <ResultCard solver={state.solver} engine={engine} onRetry={() => client.retry()} />
-        </div>
-      </div>
+              </div>
+              <Separator />
+              <ResultCard solver={state.solver} engine={engine} onRetry={() => client.retry()} />
+            </section>
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog
         open={state.helpOpen}

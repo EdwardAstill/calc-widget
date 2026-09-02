@@ -21,6 +21,15 @@ class TestSolverClient implements SolverClient {
   subscribe() { return () => undefined }
 }
 
+it('renders calculation and relations inside one card', () => {
+  const { container } = render(<ScientificCalculator solverClient={new TestSolverClient()} />)
+
+  expect(container.querySelectorAll('[data-slot="card"]')).toHaveLength(1)
+  expect(screen.getByRole('heading', { name: 'Calculation' })).toBeVisible()
+  expect(screen.getByRole('heading', { name: 'Relations' })).toBeVisible()
+  expect(screen.queryByText('Enter an equation or a symbolic query.')).not.toBeInTheDocument()
+})
+
 it('adds a relation and calculates it with shadcn controls', async () => {
   const user = userEvent.setup()
   const client = new TestSolverClient()
