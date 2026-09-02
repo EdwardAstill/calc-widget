@@ -32,6 +32,8 @@ it('renders a compact editor with a persistent preview inside one card', () => {
   expect(screen.queryByRole('heading', { name: /scientific calculator/i })).not.toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Calculation' })).not.toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Relations' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Result' })).not.toBeInTheDocument()
+  expect(screen.queryByText('ready', { exact: true })).not.toBeInTheDocument()
   expect(screen.queryByText('Preview')).not.toBeInTheDocument()
   expect(screen.getByLabelText(/calculator expression/i)).toHaveAttribute('data-slot', 'input')
   const preview = screen.getByLabelText(/rendered math preview/i)

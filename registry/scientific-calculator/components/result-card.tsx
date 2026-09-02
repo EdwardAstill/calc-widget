@@ -1,7 +1,6 @@
 import { AlertCircle, CheckCircle2, Info } from 'lucide-react'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 
@@ -129,10 +128,6 @@ export function ResultCard({ solver, engine, onRetry }: ResultCardProps) {
 
   return (
     <section className="grid gap-3" aria-label="Calculation result" aria-live="polite">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-base font-medium">Result</h2>
-        <Badge variant="outline">{engine.phase}</Badge>
-      </div>
       {content}
     </section>
   )
